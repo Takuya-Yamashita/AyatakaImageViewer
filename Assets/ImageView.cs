@@ -42,21 +42,42 @@ public class ImageView : MonoBehaviour {
 	// Jsonリストを選択した情報。関数をまたぐのでグローバルで実装
 	JsonBase JsonBaseData = null;
 
-	//private readonly string JsonFileDirectoryPath = "TestDirectry";
-	//private readonly string AtlasFileDirectoryPath = "TestDirectry";
-
-	private readonly string JsonFileDirectoryPath = "../../client/assets/ui-data";
-	private readonly string AtlasFileDirectoryPath = "../../client/assets/";
+	private string JsonFileDirectoryPath = "";
+	private string AtlasFileDirectoryPath = "";
 
 	// Use this for initialization
 	void Start () {
+#if UNITY_EDITOR
+		// パスの設定
+		JsonFileDirectoryPath = "TestDirectory";
+		AtlasFileDirectoryPath = "TestDirectory";
+#else
+		// パスの設定
+		JsonFileDirectoryPath = string.Format(
+			"..{0}..{1}client{2}assets{3}ui-data",
+			System.IO.Path.DirectorySeparatorChar,
+			System.IO.Path.DirectorySeparatorChar,
+			System.IO.Path.DirectorySeparatorChar,
+			System.IO.Path.DirectorySeparatorChar
+		);
+
+		AtlasFileDirectoryPath = string.Format(
+			"..{0}..{1}client{2}assets{3}",
+			System.IO.Path.DirectorySeparatorChar,
+			System.IO.Path.DirectorySeparatorChar,
+			System.IO.Path.DirectorySeparatorChar,
+			System.IO.Path.DirectorySeparatorChar
+		);
+#endif
 		// 指定ディレクトリから、jsonファイル一覧を取得
 		string[] files = System.IO.Directory.GetFiles(JsonFileDirectoryPath, "*.json", System.IO.SearchOption.AllDirectories);
 		for (int i = 0; i < files.Length; i++) {
-			files[i] = files[i].Replace(JsonFileDirectoryPath + "\\", "");
+			files[i] = files[i].Replace(JsonFileDirectoryPath + System.IO.Path.DirectorySeparatorChar, "");
 		}
 		JsonDropDown.ClearOptions();
-		JsonDropDown.AddOptions(new List<string>(files));
+		List<string> fileList = new List<string>(files);
+		fileList.Insert(0, "NONE");
+		JsonDropDown.AddOptions(fileList);
 	}
 	
 	// Update is called once per frame
@@ -110,7 +131,11 @@ public class ImageView : MonoBehaviour {
 	public void ChangeJsonDropdown(int index) {
 		string path = JsonDropDown.captionText.text;
 
-		FileStream fileStream = new FileStream(JsonFileDirectoryPath + "/" + path, FileMode.Open, FileAccess.Read);
+		if (path == "NONE") {
+			return;
+		}
+
+		FileStream fileStream = new FileStream(JsonFileDirectoryPath + System.IO.Path.DirectorySeparatorChar + path, FileMode.Open, FileAccess.Read);
 		BinaryReader bin = new BinaryReader(fileStream);
 		byte[] readBinary = bin.ReadBytes((int)bin.BaseStream.Length);
 		bin.Close();
@@ -128,20 +153,25 @@ public class ImageView : MonoBehaviour {
 		for (int i = 0; i < JsonBaseData.jsonData.Length; i++) {
 			if (string.IsNullOrEmpty(JsonBaseData.jsonData[i].atlas) == false) {
 				// imagesとbgは、それその物を参照する物ではないらしいので、弾く
-				if (JsonBaseData.jsonData[i].atlas.IndexOf("ui-atlas/images") == -1) {
-					if (JsonBaseData.jsonData[i].atlas.IndexOf("ui-atlas/bg") == -1) {
+				if (JsonBaseData.jsonData[i].atlas.IndexOf("ui-atlas" + "/" + "images") == -1) {
+					if (JsonBaseData.jsonData[i].atlas.IndexOf("ui-atlas" + "/" + "bg") == -1) {
 						atlasList.Add(JsonBaseData.jsonData[i].nameKey);
 					}
 				}
 			}
 		}
 		ImageTagDropDown.ClearOptions();
+		atlasList.Insert(0, "NONE");
 		ImageTagDropDown.AddOptions(atlasList);
 	}
 
 	// イメージタグの選択
 	public void ChangeImageTagDropdown(int index) {
 		string nameKey = ImageTagDropDown.captionText.text;
+		if (nameKey == "NONE") {
+			return;
+		}
+
 		string atlasName = "";
 		string fileName = "";
 		for (int i = 0; i < JsonBaseData.jsonData.Length; i++) {
@@ -152,7 +182,7 @@ public class ImageView : MonoBehaviour {
 			}
 		}
 
-		FileStream fileStream = new FileStream(AtlasFileDirectoryPath + "/" + atlasName + ".atlas", FileMode.Open, FileAccess.Read);
+		FileStream fileStream = new FileStream(AtlasFileDirectoryPath + System.IO.Path.DirectorySeparatorChar + atlasName + ".atlas", FileMode.Open, FileAccess.Read);
 		BinaryReader bin = new BinaryReader(fileStream);
 		byte[] readBinary = bin.ReadBytes((int)bin.BaseStream.Length);
 		bin.Close();
@@ -199,7 +229,7 @@ public class ImageView : MonoBehaviour {
 			}
 		}
 
-		Texture2D tex = LoadTexture2DFromFile(AtlasFileDirectoryPath + "/" + atlasName + ".png");
+		Texture2D tex = LoadTexture2DFromFile(AtlasFileDirectoryPath + System.IO.Path.DirectorySeparatorChar + atlasName + ".png");
 		// JsonやAtlasの設定は左上原点だが、どうやらUnityは左下原点なので、わかりづらい調整計算をしている
 		Sprite sprite = CreateSpriteFromTexture2D(tex, atlasData.X, tex.height - atlasData.Y - atlasData.Height, atlasData.Width, atlasData.Height);
 		Image.sprite = sprite;
