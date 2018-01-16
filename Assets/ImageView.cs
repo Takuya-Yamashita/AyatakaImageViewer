@@ -11,6 +11,8 @@ public class ImageView : MonoBehaviour {
 	[SerializeField] Image Image = null;
 	[SerializeField] Dropdown JsonDropDown = null;
 	[SerializeField] Dropdown ImageTagDropDown = null;
+	[SerializeField] Text AtlasNameText = null;
+	[SerializeField] Text FileNameText = null;
 
 	// AyatakaのJsonフォーマットに基づいたシリアライズクラス
 	[Serializable]
@@ -82,6 +84,20 @@ public class ImageView : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if (Input.GetKeyDown(KeyCode.UpArrow)) {
+			int val = ImageTagDropDown.value-1;
+			if (val < 0) {
+				val = 0;
+			}
+			ImageTagDropDown.value = val;
+		}
+		if (Input.GetKeyDown(KeyCode.DownArrow)) {
+			int val = ImageTagDropDown.value+1;
+			if (val >= ImageTagDropDown.options.Count) {
+				val = ImageTagDropDown.options.Count-1;
+			}
+			ImageTagDropDown.value = val;
+		}
 	}
 
 	// UnityのResourceではない場所からの、画像ファイル読み込み
@@ -181,6 +197,9 @@ public class ImageView : MonoBehaviour {
 				break;
 			}
 		}
+
+		AtlasNameText.text = atlasName;
+		FileNameText.text = fileName;
 
 		FileStream fileStream = new FileStream(AtlasFileDirectoryPath + System.IO.Path.DirectorySeparatorChar + atlasName + ".atlas", FileMode.Open, FileAccess.Read);
 		BinaryReader bin = new BinaryReader(fileStream);
